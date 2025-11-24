@@ -1,193 +1,282 @@
 import streamlit as st
 
-# --- Kofiguration der Seite ---
+# --- Konfiguration der Seite ---
 st.set_page_config(
     page_title="ISO-OSI Hausbau",
     page_icon="🏠",
     layout="wide"
 )
 
-# --- CSS für schöneres Styling ---
+# --- CSS Styling (Das ist der Zauber für den Haus-Look) ---
 st.markdown("""
     <style>
-    .layer-box {
-        padding: 20px;
-        border-radius: 10px;
-        margin-bottom: 10px;
+    /* Container für das Haus zentrieren */
+    .house-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-end;
+        width: 100%;
+        padding-top: 20px;
+    }
+
+    /* Basis-Stil für alle Blöcke */
+    .layer-block {
+        text-align: center;
+        padding: 15px;
         color: white;
         font-weight: bold;
-        text-align: center;
-        border: 2px solid #333;
+        transition: all 0.5s ease;
+        position: relative;
+        box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+        text-shadow: 1px 1px 2px black;
     }
-    .success-msg {
-        color: green;
-        font-weight: bold;
+
+    /* Spezifische Stile für die Haus-Teile */
+    
+    /* Layer 7: Das Dach */
+    .layer-7 {
+        width: 50%;
+        background: linear-gradient(135deg, #8e44ad, #9b59b6); /* Lila Dachziegel */
+        border-radius: 50% 50% 5px 5px; /* Rundes Dach / Kuppel */
+        border-bottom: 5px solid #5e3370;
+        margin-bottom: 2px;
+        clip-path: polygon(15% 0%, 85% 0%, 100% 100%, 0% 100%); /* Trapezform */
     }
-    .error-msg {
-        color: red;
-        font-weight: bold;
+
+    /* Layer 6: Obergeschoss */
+    .layer-6 {
+        width: 70%;
+        background-color: #3498db; /* Blau */
+        border-left: 5px solid #2980b9;
+        border-right: 5px solid #2980b9;
+        margin-bottom: 2px;
     }
+
+    /* Layer 5: Obergeschoss */
+    .layer-5 {
+        width: 70%;
+        background-color: #2ecc71; /* Grün */
+        border-left: 5px solid #27ae60;
+        border-right: 5px solid #27ae60;
+        margin-bottom: 2px;
+    }
+
+    /* Layer 4: 1. Stock */
+    .layer-4 {
+        width: 70%;
+        background-color: #f1c40f; /* Gelb */
+        color: #333; /* Dunkle Schrift für Gelb */
+        text-shadow: none;
+        border-left: 5px solid #f39c12;
+        border-right: 5px solid #f39c12;
+        margin-bottom: 2px;
+    }
+
+    /* Layer 3: Erdgeschoss (Eingang) */
+    .layer-3 {
+        width: 70%;
+        background-color: #e67e22; /* Orange */
+        border-left: 5px solid #d35400;
+        border-right: 5px solid #d35400;
+        border-bottom: 2px solid #d35400;
+        margin-bottom: 2px;
+    }
+
+    /* Layer 2: Fundamentplatte */
+    .layer-2 {
+        width: 85%; /* Breiter als das Haus */
+        background: repeating-linear-gradient(
+            45deg,
+            #7f8c8d,
+            #7f8c8d 10px,
+            #95a5a6 10px,
+            #95a5a6 20px
+        ); /* Beton-Look */
+        border: 2px solid #34495e;
+        border-radius: 5px;
+        margin-bottom: 5px;
+    }
+
+    /* Layer 1: Erde / Untergrund */
+    .layer-1 {
+        width: 100%; /* Volle Breite */
+        background-color: #5d4037;
+        background-image: url("https://www.transparenttextures.com/patterns/dark-matter.png"); /* Struktur */
+        border-radius: 0 0 15px 15px;
+        padding: 25px;
+    }
+
+    /* Dekorationen */
+    .window { font-size: 1.5em; position: absolute; }
+    .window-left { left: 20px; }
+    .window-right { right: 20px; }
+    .door { font-size: 2em; }
+
     </style>
     """, unsafe_allow_html=True)
 
-# --- Daten: Das OSI-Modell als Haus ---
-# Wir definieren die Schichten von unten (1) nach oben (7)
+# --- Daten ---
 osi_layers = {
     1: {
-        "name": "Physical Layer (Bitübertragungsschicht)",
-        "house_part": "Das Fundament & Grundstück",
-        "color": "#5D4037", # Braun
-        "desc_house": "Ohne Boden und Fundament steht nichts. Hier liegen die physischen Steine und Leitungen.",
-        "desc_tech": "Übertragung von rohen Bits über Kabel, Glasfaser oder Funk (Volt, Frequenzen)."
+        "name": "L1: Physical",
+        "house_part": "Grundstück & Leitungen",
+        "css_class": "layer-1",
+        "icon": "⛏️",
+        "desc": "Bits, Kabel, Signale",
+        "detail": "Hier liegen die physischen Leitungen im Boden."
     },
     2: {
-        "name": "Data Link Layer (Sicherungsschicht)",
-        "house_part": "Die Bodenplatte & Zufahrt",
-        "color": "#795548", # Helleres Braun
-        "desc_house": "Eine sichere Basis auf dem Fundament, die den direkten Zugang zum Haus ermöglicht.",
-        "desc_tech": "Fehlerfreie Übertragung zwischen zwei direkt verbundenen Knoten (MAC-Adressen, Switches)."
+        "name": "L2: Data Link",
+        "house_part": "Beton-Fundament",
+        "css_class": "layer-2",
+        "icon": "🏗️",
+        "desc": "MAC-Adressen, Switches",
+        "detail": "Die stabile Bodenplatte, die zwei Punkte verbindet."
     },
     3: {
-        "name": "Network Layer (Vermittlungsschicht)",
-        "house_part": "Die Hausnummer & Adresse",
-        "color": "#FF9800", # Orange
-        "desc_house": "Damit die Post ankommt, braucht das Haus eine Adresse, damit man es im Stadtplan findet.",
-        "desc_tech": "Logische Adressierung und Routing der Pakete durch das Netzwerk (IP-Adressen, Router)."
+        "name": "L3: Network",
+        "house_part": "Erdgeschoss & Hausnummer",
+        "css_class": "layer-3",
+        "icon": "🚪", # Tür Icon für Eingang
+        "desc": "IP-Adressen, Routing",
+        "detail": "Der Haupteingang mit der Adresse (IP)."
     },
     4: {
-        "name": "Transport Layer (Transportschicht)",
-        "house_part": "Wände & Zimmeraufteilung",
-        "color": "#FFC107", # Gelb
-        "desc_house": "Die Struktur des Hauses. Sie sorgt dafür, dass Dinge (Möbel/Daten) sicher in die richtigen Räume kommen.",
-        "desc_tech": "Segmentierung des Datenstroms, Fehlerkontrolle und Zuordnung zu Anwendungen (TCP/UDP, Ports)."
+        "name": "L4: Transport",
+        "house_part": "1. Stock & Zimmer",
+        "css_class": "layer-4",
+        "icon": "🛋️",
+        "desc": "TCP/UDP, Ports",
+        "detail": "Verteilung in die richtigen Zimmer (Ports)."
     },
     5: {
-        "name": "Session Layer (Sitzungsschicht)",
-        "house_part": "Türen & Schlösser",
-        "color": "#4CAF50", # Grün
-        "desc_house": "Regelt, wer wann reinkommen darf und hält die Verbindung (Tür) offen oder schließt sie.",
-        "desc_tech": "Steuerung der Verbindungen (Sessions) zwischen Computern (Aufbau, Verwaltung, Abbau)."
+        "name": "L5: Session",
+        "house_part": "2. Stock & Flure",
+        "css_class": "layer-5",
+        "icon": "🪟", # Fenster
+        "desc": "Session Mngt.",
+        "detail": "Verwaltung der offenen Verbindungen."
     },
     6: {
-        "name": "Presentation Layer (Darstellungsschicht)",
-        "house_part": "Inneneinrichtung & Dolmetscher",
-        "color": "#2196F3", # Blau
-        "desc_house": "Sorgt dafür, dass der Besuch sich wohlfühlt (Sprache, Formatierung, Entschlüsselung).",
-        "desc_tech": "Übersetzung der Daten in ein verständliches Format, Verschlüsselung, Kompression (JPEG, ASCII, SSL)."
+        "name": "L6: Presentation",
+        "house_part": "Obergeschoss & Deko",
+        "css_class": "layer-6",
+        "icon": "🖼️", # Bild/Deko
+        "desc": "Verschlüsselung, Formate",
+        "detail": "Der Übersetzer & Innenarchitekt."
     },
     7: {
-        "name": "Application Layer (Anwendungsschicht)",
-        "house_part": "Die Bewohner & Interaktion",
-        "color": "#9C27B0", # Lila
-        "desc_house": "Die Menschen, die im Haus leben, Briefe schreiben und das Telefon benutzen.",
-        "desc_tech": "Schnittstelle zum Benutzer, Netzwerkdienste für Anwendungen (HTTP, SMTP, FTP)."
+        "name": "L7: Application",
+        "house_part": "Dachstuhl & Bewohner",
+        "css_class": "layer-7",
+        "icon": "📡", # Antenne auf Dach
+        "desc": "HTTP, FTP, SMTP",
+        "detail": "Die Anwendung, die der User sieht."
     }
 }
 
-# --- Session State Initialisierung ---
+# --- Session State ---
 if 'current_level' not in st.session_state:
-    st.session_state.current_level = 0 # 0 bedeutet, noch nichts gebaut
-if 'history' not in st.session_state:
-    st.session_state.history = []
+    st.session_state.current_level = 0
 
-# --- Header ---
-st.title("🏠 Baue dein ISO-OSI Haus")
-st.markdown("""
-Willkommen auf der Baustelle! 
-Deine Aufgabe ist es, das Haus **Schicht für Schicht von unten nach oben** aufzubauen. 
-Jedes Bauteil entspricht einer Schicht des ISO-OSI-Modells.
-""")
+# --- Hauptbereich ---
+st.title("🏗️ Interaktiver OSI-Hausbau")
 
-# --- Layout ---
-col_control, col_display = st.columns([1, 2])
+col1, col2 = st.columns([1, 2], gap="large")
 
-# --- Logik & Controls (Linke Spalte) ---
-with col_control:
-    st.subheader("Werkzeugkasten")
+# --- Linke Spalte: Steuerung ---
+with col1:
+    st.markdown("### 👷 Bauleiter-Menü")
     
-    # Fortschrittsanzeige
-    progress = st.session_state.current_level / 7
-    st.progress(progress, text=f"Baufortschritt: {st.session_state.current_level}/7 Schichten")
-
+    # Game Logic
     if st.session_state.current_level < 7:
-        st.info("Wähle das nächste logische Bauteil aus, um das Haus weiterzubauen.")
+        st.info(f"Wir bauen gerade Schicht {st.session_state.current_level + 1}.")
         
-        # Wir erstellen eine Liste aller Schichten für das Dropdown
-        # Um es schwieriger zu machen, zeigen wir alle Namen an, nicht nur den nächsten
-        options = {k: f"{v['name']} ({v['house_part']})" for k, v in osi_layers.items()}
+        # Liste für Dropdown generieren
+        options_map = {f"{v['name']} - {v['house_part']}": k for k, v in osi_layers.items()}
         
-        # User Auswahl
-        selected_option_label = st.selectbox(
-            "Welches Bauteil kommt als nächstes?",
-            options=list(options.values()),
-            index=None,
-            placeholder="Bitte wählen..."
+        choice = st.selectbox(
+            "Wähle das nächste Bauteil:", 
+            list(options_map.keys()), 
+            index=None, 
+            placeholder="Baumaterial auswählen..."
         )
-
-        # Button zum Bauen
-        if st.button("Bauteil hinzufügen"):
-            if selected_option_label:
-                # Finde die ID basierend auf dem Label
-                selected_id = [k for k, v in options.items() if v == selected_option_label][0]
+        
+        if st.button("🛠️ Bauen!"):
+            if choice:
+                chosen_layer_id = options_map[choice]
+                required_layer = st.session_state.current_level + 1
                 
-                # Prüfung: Ist es die korrekte nächste Schicht?
-                next_required = st.session_state.current_level + 1
-                
-                if selected_id == next_required:
+                if chosen_layer_id == required_layer:
                     st.session_state.current_level += 1
-                    st.balloons() # Kleiner Effekt bei Erfolg
+                    st.toast(f"Klasse! {osi_layers[chosen_layer_id]['house_part']} erfolgreich gebaut!", icon="✅")
                     st.rerun()
-                elif selected_id <= st.session_state.current_level:
-                    st.error("Dieses Bauteil hast du bereits verbaut!")
+                elif chosen_layer_id <= st.session_state.current_level:
+                    st.warning("Das haben wir schon gebaut! Wir brauchen das nächste Teil.")
                 else:
-                    st.error(f"Das funktioniert nicht! Du kannst Schicht {selected_id} nicht bauen, bevor Schicht {next_required} fertig ist. Das Haus würde einstürzen!")
+                    st.error(f"🛑 HALT! Du kannst {choice} nicht bauen, bevor der Unterbau fertig ist! (Physik beachten!)")
             else:
-                st.warning("Bitte wähle zuerst ein Bauteil aus.")
+                st.warning("Wähle erst ein Material aus.")
+                
     else:
-        st.success("Glückwunsch! Dein Haus (und dein Netzwerk-Stack) ist fertig!")
-        if st.button("Neustart"):
+        st.success("🎉 Das Haus ist fertiggestellt! Alle Schichten sind korrekt.")
+        st.balloons()
+        if st.button("Abriss & Neubau"):
             st.session_state.current_level = 0
             st.rerun()
+    
+    # Legende / Erklärung des zuletzt gebauten Teils
+    if st.session_state.current_level > 0:
+        st.markdown("---")
+        curr = osi_layers[st.session_state.current_level]
+        st.markdown(f"**Zuletzt gebaut:** {curr['name']}")
+        st.caption(curr['detail'])
 
-# --- Visualisierung (Rechte Spalte) ---
-with col_display:
-    st.subheader("Die Baustelle")
+# --- Rechte Spalte: Die Baustelle (Visualisierung) ---
+with col2:
+    st.markdown("### 🏡 Die Baustelle")
     
-    # Wir zeigen das Haus von oben nach unten an (Layer 7 oben, Layer 1 unten)
-    # Aber wir zeigen nur das an, was schon gebaut wurde (current_level)
+    # Container Start
+    st.markdown('<div class="house-container">', unsafe_allow_html=True)
     
-    if st.session_state.current_level == 0:
-        st.image("https://img.icons8.com/ios/100/000000/construction-worker.png", width=100)
-        st.markdown("*Hier ist noch nichts. Fang an zu bauen!*")
+    # Wir loopen rückwärts (7 oben, 1 unten)
+    # Wir zeigen placeholders an für Dinge, die noch nicht gebaut sind, damit man die "Lücke" sieht
     
-    # Loop rückwärts von 7 bis 1, aber zeige nur an wenn i <= current_level
     for i in range(7, 0, -1):
-        if i <= st.session_state.current_level:
-            layer = osi_layers[i]
-            
-            # Container für jede Schicht
-            with st.container():
-                # HTML/CSS Block für die visuelle Darstellung
-                st.markdown(f"""
-                <div class="layer-box" style="background-color: {layer['color']};">
-                    <h3>Schicht {i}: {layer['name']}</h3>
-                    <h4>🏗️ {layer['house_part']}</h4>
-                </div>
-                """, unsafe_allow_html=True)
-                
-                # Erklärung als Expander (damit es nicht zu voll wird, aber info da ist)
-                with st.expander(f"ℹ️ Erklärung: {layer['house_part']}"):
-                    st.markdown(f"**🏠 Haus-Analogie:** {layer['desc_house']}")
-                    st.markdown(f"**💻 Technik:** {layer['desc_tech']}")
+        layer = osi_layers[i]
         
-        elif i == st.session_state.current_level + 1:
-            # Platzhalter für die nächste Schicht (Ghost view)
+        if i <= st.session_state.current_level:
+            # --- GEBAUTER TEIL ---
+            
+            # Dekoration: Fenster hinzufügen für Schichten 4,5,6
+            deco_html = ""
+            if i == 3:
+                 deco_html = '<div class="door">🚪</div>' # Tür im EG
+            elif i in [4, 5, 6]:
+                deco_html = '<span class="window window-left">🪟</span><span class="window window-right">🪟</span>'
+            elif i == 7:
+                deco_html = '<div style="margin-bottom:5px;">📡</div>'
+
             st.markdown(f"""
-            <div style="border: 2px dashed #ccc; padding: 20px; margin-bottom: 10px; text-align: center; color: #ccc; border-radius: 10px;">
-                ❓ Hier entsteht bald Schicht {i}
+            <div class="layer-block {layer['css_class']}">
+                {deco_html}
+                <div style="font-size: 0.9em;">{layer['name']}</div>
+                <div style="font-size: 1.1em;">{layer['house_part']}</div>
+                <small>{layer['desc']}</small>
             </div>
             """, unsafe_allow_html=True)
+            
+        elif i == st.session_state.current_level + 1:
+            # --- NÄCHSTER SCHRITT (Geisterbild) ---
+            st.markdown(f"""
+            <div style="width: 60%; border: 2px dashed #ccc; color: #ccc; padding: 20px; margin: 5px; text-align: center; border-radius: 10px;">
+                🏗️ Hier muss Schicht {i} hin
+            </div>
+            """, unsafe_allow_html=True)
+        else:
+            # --- LUFT (Noch weit entfernt) ---
+            # Zeigen wir einfach als leeren Raum an oder gar nicht, damit das Haus von unten wächst
+            pass
 
-# --- Footer ---
-st.markdown("---")
-st.caption("Interaktive Lern-App für das ISO-OSI Modell | Erstellt mit Streamlit")
+    st.markdown('</div>', unsafe_allow_html=True) # Ende Container
