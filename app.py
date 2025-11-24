@@ -8,54 +8,45 @@ st.set_page_config(
 )
 
 # --- CSS Styling ---
+# Wir zentrieren die Inhalte in den Spalten
 st.markdown("""
     <style>
-    /* Hauptcontainer für die "Straße" */
-    .neighborhood {
+    /* Genereller Container für Haus-Elemente */
+    .element-container {
         display: flex;
-        flex-direction: column;
-        width: 100%;
-        padding-top: 10px;
-    }
-
-    /* Eine Zeile im OSI-Modell (Linkes Haus - Mitte - Rechtes Haus) */
-    .layer-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-end;
-        margin-bottom: 4px;
+        justify-content: center;
+        align-items: center;
         width: 100%;
     }
 
     /* Basis-Stil für Haus-Blöcke */
     .house-block {
         text-align: center;
-        padding: 10px;
+        padding: 8px;
         color: white;
         font-weight: bold;
         position: relative;
         box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
         transition: transform 0.3s;
         border: 1px solid rgba(0,0,0,0.1);
+        margin-bottom: 5px; /* Abstand zwischen den Schichten */
     }
     
     .house-block:hover {
-        transform: scale(1.02);
+        transform: scale(1.05);
         z-index: 10;
     }
 
     /* Die Verbindung in der Mitte */
     .connection-line {
-        flex-grow: 1;
         display: flex;
         flex-direction: column;
         justify-content: center;
         align-items: center;
-        margin: 0 10px;
+        width: 100%;
+        height: 50px; /* Muss zur Höhe der Blöcke passen */
         color: #666;
         font-size: 0.8em;
-        border-bottom: 1px dashed #ccc;
-        height: 40px; /* Fixe Höhe zur Ausrichtung */
     }
 
     /* Spezifische Formen für die Schichten */
@@ -109,6 +100,17 @@ st.markdown("""
         border-radius: 10px;
         font-size: 0.75rem;
         border: 1px solid #ccc;
+        white-space: nowrap;
+    }
+    
+    /* Platzhalter Box */
+    .placeholder-box {
+        border: 2px dashed #444;
+        color: #666;
+        padding: 10px;
+        border-radius: 8px;
+        background-color: rgba(255,255,255,0.05);
+        font-size: 0.8em;
     }
 
     </style>
@@ -136,8 +138,8 @@ Hier bauen wir **Sender (Haus A)** und **Empfänger (Haus B)** gleichzeitig auf.
 Damit Kommunikation funktioniert, müssen beide Seiten die gleichen Protokolle auf der gleichen Schicht sprechen.
 """)
 
-# --- Layout ---
-col_ctrl, col_vis = st.columns([1, 3])
+# --- Layout Aufteilung ---
+col_ctrl, col_space, col_vis = st.columns([1, 0.2, 3])
 
 # --- Steuerung (Links) ---
 with col_ctrl:
@@ -153,89 +155,94 @@ with col_ctrl:
         st.markdown(f"*{layer_info['desc']}*")
         
         # Aufgabe: Wähle das Richtige
-        options = {v['name']: k for k, v in osi_layers.items()}
-        # Mische Optionen für Quiz-Effekt wäre hier möglich, wir halten es simpel:
+        # Um das Quiz nicht zu nervig zu machen, ist die richtige Antwort vorausgewählt,
+        # kann aber für Hard-Mode geändert werden auf index=None
+        options_list = ["Wählen..."] + [v['name'] for k,v in osi_layers.items()]
         
-        selected = st.selectbox("Welches Bauteil kommt jetzt?", ["Wählen..."] + [v['name'] for k,v in osi_layers.items()])
+        selected = st.selectbox("Welches Bauteil kommt jetzt?", options_list)
         
-        if st.button("🔨 Bauteil setzen"):
+        if st.button("🔨 Bauteil setzen", use_container_width=True):
             if selected == layer_info['name']:
                 st.session_state.level += 1
-                st.success("Korrekt! Beide Häuser wachsen.")
+                st.success("Korrekt!")
                 st.rerun()
             elif selected != "Wählen...":
                 st.error("Falsches Bauteil! Das passt statisch nicht.")
     else:
         st.success("🎉 Verbindung hergestellt!")
-        if st.button("Neustart"):
+        if st.button("Neustart", type="primary"):
             st.session_state.level = 0
             st.rerun()
 
     # Legende
-    st.markdown("---")
-    st.markdown("**PDU:** Protocol Data Unit (Wie heißen die Daten auf dieser Ebene?)")
+    st.divider()
+    st.caption("**PDU:** Protocol Data Unit (Wie heißen die Daten auf dieser Ebene?)")
 
 # --- Visualisierung (Rechts) ---
 with col_vis:
     
-    # Kopfzeile Häuser
-    c1, c2, c3 = st.columns([1, 1, 1])
-    c1.markdown("### 🏠 Haus A (Sender)")
-    c3.markdown("### 🏠 Haus B (Empfänger)")
+    # Header Zeile für die Häuser
+    h_col1, h_col2, h_col3 = st.columns([1, 1, 1])
+    h_col1.markdown("<h3 style='text-align:center;'>🏠 Haus A</h3>", unsafe_allow_html=True)
+    h_col2.markdown("<h5 style='text-align:center; color:#888;'>Verbindung</h5>", unsafe_allow_html=True)
+    h_col3.markdown("<h3 style='text-align:center;'>🏠 Haus B</h3>", unsafe_allow_html=True)
     
-    st.markdown('<div class="neighborhood">', unsafe_allow_html=True)
-
     # Loop von oben (7) nach unten (1)
     for i in range(7, 0, -1):
         layer = osi_layers[i]
         
-        # Wenn gebaut:
+        # Wir erstellen für JEDE Schicht eine neue Zeile mit 3 Spalten
+        # Das verhindert Layout-Verschiebungen und Markdown-Code-Fehler
+        row_cols = st.columns([1, 1, 1])
+        
+        # --- Wenn Schicht bereits gebaut ist ---
         if i <= st.session_state.level:
             
-            # Visualisierung der "Logischen Verbindung" in der Mitte
-            conn_content = ""
-            if i == 1:
-                # Layer 1 ist physisch verbunden
-                conn_style = "border-bottom: 5px solid #333; border-style: solid;"
-                conn_text = "Physische Leitung"
-                icon_mid = "🔌"
-            else:
-                # Layer 2-7 sind logisch verbunden
-                conn_style = "border-style: dashed;"
-                conn_text = f"Austausch: {layer['pdu']}"
-                icon_mid = "↔️"
-
-            # HTML Aufbau für eine Zeile
-            st.markdown(f"""
-            <div class="layer-row">
-                <!-- HAUS A -->
-                <div class="house-block {layer['shape']}">
-                    <div class="window win-l">{layer['deco']}</div>
-                    <div>L{i}: {layer['name']}</div>
+            # 1. Spalte: Haus A
+            with row_cols[0]:
+                st.markdown(f"""
+                <div class="element-container">
+                    <div class="house-block {layer['shape']}">
+                        <div class="window win-l">{layer['deco']}</div>
+                        <div>L{i}: {layer['name']}</div>
+                    </div>
                 </div>
+                """, unsafe_allow_html=True)
 
-                <!-- VERBINDUNG -->
+            # 2. Spalte: Verbindung
+            with row_cols[1]:
+                conn_style = "border-bottom: 4px solid #333; border-style: solid;" if i == 1 else "border-bottom: 2px dashed #ccc;"
+                icon_mid = "🔌" if i == 1 else "↔️"
+                
+                st.markdown(f"""
                 <div class="connection-line" style="{conn_style}">
-                    <span style="background:#fff; padding:0 5px;">{icon_mid}</span>
-                    <span class="pdu-badge">{conn_text}</span>
+                    <span style="background:#0e1117; padding:0 5px; font-size:1.2em;">{icon_mid}</span>
+                    <span class="pdu-badge">{layer['pdu']}</span>
                 </div>
+                """, unsafe_allow_html=True)
 
-                <!-- HAUS B -->
-                <div class="house-block {layer['shape']}">
-                    <div class="window win-r">{layer['deco']}</div>
-                    <div>L{i}: {layer['name']}</div>
+            # 3. Spalte: Haus B
+            with row_cols[2]:
+                st.markdown(f"""
+                <div class="element-container">
+                    <div class="house-block {layer['shape']}">
+                        <div class="window win-r">{layer['deco']}</div>
+                        <div>L{i}: {layer['name']}</div>
+                    </div>
                 </div>
-            </div>
-            """, unsafe_allow_html=True)
+                """, unsafe_allow_html=True)
             
+        # --- Wenn dies die nächste zu bauende Schicht ist (Ghost View) ---
         elif i == st.session_state.level + 1:
-            # Geister-Ebene (Next Step)
-            st.markdown(f"""
-            <div class="layer-row" style="opacity: 0.3;">
-                <div class="house-block" style="width: 150px; border: 2px dashed #ccc; color: black;">🏗️ ???</div>
-                <div class="connection-line" style="border: none;">⏳</div>
-                <div class="house-block" style="width: 150px; border: 2px dashed #ccc; color: black;">🏗️ ???</div>
-            </div>
-            """, unsafe_allow_html=True)
-            
-    st.markdown('</div>', unsafe_allow_html=True)
+            with row_cols[0]:
+                st.markdown('<div class="element-container"><div class="placeholder-box">🏗️ ???</div></div>', unsafe_allow_html=True)
+            with row_cols[1]:
+                st.markdown('<div style="text-align:center; color:#444;">⏳</div>', unsafe_allow_html=True)
+            with row_cols[2]:
+                 st.markdown('<div class="element-container"><div class="placeholder-box">🏗️ ???</div></div>', unsafe_allow_html=True)
+        
+        # --- Leere Zeilen für die Zukunft (damit das Layout stabil bleibt) ---
+        else:
+             # Optionale leere Platzhalter, damit die Höhe konstant bleibt
+             with row_cols[0]:
+                 st.markdown('<div style="height:60px;"></div>', unsafe_allow_html=True)
